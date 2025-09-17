@@ -97,7 +97,7 @@ for t in reversed(range(T)):
         current_paths_2 = [ref_path_2[:, t, :]]
         # generate path from T
         for futs in range(path_length):
-            angle = models_2[t + futs](torch.cat([current_paths_2[-1]/torch.tensor([20, 10]),
+            angle = models_2[t + futs](torch.cat([current_paths_2[-1]/torch.tensor([20, 10], device = device),
                                                    training_winds[:, t + futs].view(n, 1)], dim = 1))
             heading = torch.cat([torch.cos(angle),
                                   torch.sin(angle)], dim = 1)
@@ -151,7 +151,7 @@ for t in range(T - 1, -1, -1):
     for rem in range(0, T - t):
         wind_val = training_winds[:, t + rem].view(n, 1).to(device)
         wind_vector = torch.cat([torch.zeros_like(wind_val), wind_val], dim=1)
-        input_tensor = torch.cat((curr_p/torch.tensor([20, 10]), wind_val), dim=1)
+        input_tensor = torch.cat((curr_p/torch.tensor([20, 10], device = device), wind_val), dim=1)
 
         curr_control = models_2[t + rem](input_tensor)
         heading = torch.cat([torch.cos(curr_control), torch.sin(curr_control)], dim=1)

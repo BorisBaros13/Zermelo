@@ -73,7 +73,7 @@ class NeuralNet_2(nn.Module):
     
 # now let's train
 input_dim, width, output_dim = 3, 200, 1
-start_rate, final_rate, num_epochs = 0.001, 0.000000001, 3000
+start_rate, final_rate, num_epochs = 0.001, 0.000000001, 10000
 models_2 = [NeuralNet_2(input_dim, width, output_dim).to(device) for _ in range(T)]
 optimizers_2 = [optim.AdamW(model.parameters(), lr=start_rate) for model in models_2]
 schedulers_2 = [optim.lr_scheduler.CosineAnnealingLR(opt, T_max = num_epochs, eta_min = final_rate) for opt in optimizers_2]

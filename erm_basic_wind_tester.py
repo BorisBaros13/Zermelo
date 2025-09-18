@@ -63,6 +63,7 @@ class NeuralNet_2(nn.Module):
         self.hidden_layer = nn.Linear(input_dim, width)
         self.hidden_layer_2 = nn.Linear(width, width)
         self.hidden_layer_3 = nn.Linear(width, width)
+        self.hidden_layer_4 = nn.Linear(width, width)
         self.sigmoid = nn.Tanh()
         self.output_layer = nn.Linear(width, output_dim)
         
@@ -70,18 +71,19 @@ class NeuralNet_2(nn.Module):
         activations_1 = self.sigmoid(self.hidden_layer(x))
         activations_2 = self.sigmoid(self.hidden_layer_2(activations_1))
         activations_3 = self.sigmoid(self.hidden_layer_3(activations_2))
-        unscaled = self.output_layer(activations_2)
+        activations_4 = self.sigmoid(self.hidden_layer_4(activations_3))
+        unscaled = self.output_layer(activations_3)
         return unscaled# / self.width
     
 # now let's train
-input_dim, width, output_dim = 3, 300, 1
-start_rate, final_rate, num_epochs = 0.0001, 0.000000001, 10000
+input_dim, width, output_dim = 3, 100, 1
+start_rate, final_rate, num_epochs = 0.00001, 0.000000001, 20000
 models_2 = [NeuralNet_2(input_dim, width, output_dim).to(device) for _ in range(T)]
 optimizers_2 = [optim.AdamW(model.parameters(), lr=start_rate) for model in models_2]
 schedulers_2 = [optim.lr_scheduler.CosineAnnealingLR(opt, T_max = num_epochs, eta_min = final_rate) for opt in optimizers_2]
 
 vs = 0.8
-n = 60
+n = 64
 A = 2
 M = 10
 ref_ctrl = torch.zeros(n, 1, device = device)
@@ -266,7 +268,7 @@ ani.save("erm_basic_wind_sample_animation.gif", writer="pillow", fps=10)
 plt.close()
 
 # now for out-of-sample
-test_size = 500
+test_size = 1000
 test_winds = wind_process(T, theta, mu, wind_sigma, test_size, tau)
 test_initial_points = torch.zeros(test_size, 2, device = device) - torch.tensor([20, 0], device = device)
 test_paths = [test_initial_points]

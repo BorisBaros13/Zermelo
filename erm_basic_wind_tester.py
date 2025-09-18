@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 from IPython.display import HTML
 from matplotlib import animation
 from matplotlib.collections import LineCollection
+import matplotlib.patches as mpatches
+import time
 
 # Device setup
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -72,8 +74,8 @@ class NeuralNet_2(nn.Module):
         return unscaled# / self.width
     
 # now let's train
-input_dim, width, output_dim = 3, 200, 1
-start_rate, final_rate, num_epochs = 0.001, 0.000000001, 10000
+input_dim, width, output_dim = 3, 300, 1
+start_rate, final_rate, num_epochs = 0.0001, 0.000000001, 10000
 models_2 = [NeuralNet_2(input_dim, width, output_dim).to(device) for _ in range(T)]
 optimizers_2 = [optim.AdamW(model.parameters(), lr=start_rate) for model in models_2]
 schedulers_2 = [optim.lr_scheduler.CosineAnnealingLR(opt, T_max = num_epochs, eta_min = final_rate) for opt in optimizers_2]
@@ -89,6 +91,7 @@ ref_path_2 = gen_ref_path(ref_ctrl, initial_points, training_winds, vs, T, n)
 # zeros and ones vectors so we don't keep having to remake it
 zeros_vec, ones_vec = torch.zeros(n, 1, device = device), torch.ones(n, 1, device = device)
 # run without training first, just to check correctness of computation
+start_time = time.time()
 for t in reversed(range(T)):
     print(f"Backwards Inductive Step t = {t}...")
     path_length = T - t
@@ -125,7 +128,8 @@ for t in reversed(range(T)):
     # freeze model after training
     for param in models_2[t].parameters():
         param.requires_grad = False
-
+end_time = time.time()
+print(f"Total training time: {end_time - start_time:.3f} seconds")
 ref_control = torch.zeros(n, 1, device=device)
 ref_path = [initial_points.to(device)] 
 
@@ -259,3 +263,73 @@ ani = animation.FuncAnimation(
 )
 
 ani.save("erm_basic_wind_sample_animation.gif", writer="pillow", fps=10)
+plt.close()
+
+# now for out-of-sample
+test_size = 500
+test_winds = wind_process(T, theta, mu, wind_sigma, test_size, tau)
+test_initial_points = torch.zeros(test_size, 2, device = device) - torch.tensor([20, 0], device = device)
+test_paths = [test_initial_points]
+zeros_vec = torch.zeros(test_size, 1, device = device)
+# forward rollout
+for t in range(T):
+    wind_vec = torch.cat([zeros_vec,
+                          test_winds[:, t].view(test_size, 1)], dim = 1)
+    angle = models_2[t](torch.cat([test_paths[-1]/torch.tensor([20, 10], device = device),
+                                test_winds[:, t].view(test_size, 1)], dim = 1))
+    heading = torch.cat([torch.cos(angle), torch.sin(angle)], dim = 1)
+    new_p = test_paths[-1] + vs * heading + wind_vec
+    test_paths.append(new_p)
+test_paths = torch.stack(test_paths, dim = 1)
+
+# plotting 
+red = mpatches.Patch(color="red", label="Out-of-Sample")
+green = mpatches.Patch(color="green", label="In-Sample")
+fig, ax = plt.subplots(figsize=(19.2, 10.8), dpi=800,
+                       constrained_layout = True)
+ax.set_ylim([-6, 6])
+ax.set_xlim(-L_x, L_x)
+# add the obstacle contour 
+grid_res = 300  # Resolution of the grid
+x_vals = torch.linspace(-6, 6, grid_res)
+y_vals = torch.linspace(-6, 6, grid_res)
+X, Y = torch.meshgrid(x_vals, y_vals, indexing='xy')
+Z = running_cost(X, Y, A=2, M=10)*100
+Z[Z < 1.5] = float('nan')
+ax.contourf(X.numpy(), Y.numpy(), Z.numpy(), levels=10, cmap='Greys', alpha=0.8)
+
+
+for pth in range(test_size):
+    ax.plot(test_paths[pth, :, 0].cpu().detach(),
+             test_paths[pth, :, 1].cpu().detach(), 
+             linewidth = 0.9, alpha = 0.5, color = "red")
+for pth in range(n):
+    ax.plot(current_paths_2[pth, :, 0].cpu().detach(), current_paths_2[pth, :, 1].cpu().detach(), 
+            linewidth = 0.9, color = "green")
+targ = ax.scatter(x=20, y=0, label="Target", color="black", zorder=1000)
+ax.set_title("Unregularised Problem")
+ax.legend(handles=[red, green, targ])
+plt.savefig("erm_in_out_sample.png", dpi=600, bbox_inches='tight')
+plt.close()
+
+# now we plot and save the histogram of (terminal) costs too
+# first, compute them
+train_loss = np.log(np.array(terminal_cost(current_paths_2[:, -1, 0].view(n, 1),
+                           current_paths_2[:, -1, 1].view(n, 1), L_x).detach().cpu())[:, 0])
+test_loss = np.log(np.array(terminal_cost(test_paths[:, -1, 0].view(test_size, 1),
+                           test_paths[:, -1, 1].view(test_size, 1), L_x).detach().cpu())[:, 0])
+fig, ax = plt.subplots(figsize = (19.2, 10.8), constrained_layout = True)
+ax.hist(test_loss, bins = 20, density = True, alpha = 0.6, color = "blue", label = "Out-of-Sample")
+ax.set_xlim(-5, 5)
+ax.set_ylim(0, 0.8)
+ax.hist(train_loss, bins = 20, density = True, alpha = 0.6, color = "orange", label = "In-Sample")
+tick_location_1 = np.mean(test_loss)
+ax.axvline(x=tick_location_1, color='blue', linewidth=2, linestyle = "-")
+tick_location_2 = np.mean(train_loss)
+ax.axvline(x=tick_location_2, color='orange', linewidth=2)
+ax.set_xlabel("Log of Squared Distance")
+ax.set_title("Histogram of (Log of) Terminal Costs for Unregularised Problem")
+ax.legend()
+
+plt.savefig("erm_hists_sample.png", dpi=300, bbox_inches='tight')
+plt.close()

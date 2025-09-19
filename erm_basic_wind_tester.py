@@ -132,6 +132,8 @@ for t in reversed(range(T)):
         param.requires_grad = False
 end_time = time.time()
 print(f"Total training time: {end_time - start_time:.3f} seconds")
+
+# now for the animation
 ref_control = torch.zeros(n, 1, device=device)
 ref_path = [initial_points.to(device)] 
 

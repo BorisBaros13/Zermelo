@@ -92,7 +92,6 @@ training_winds = wind_process(T, theta, mu, wind_sigma, n, tau)
 ref_path_2 = gen_ref_path(ref_ctrl, initial_points, training_winds, vs, T, n)
 # zeros and ones vectors so we don't keep having to remake it
 zeros_vec, ones_vec = torch.zeros(n, 1, device = device), torch.ones(n, 1, device = device)
-# run without training first, just to check correctness of computation
 start_time = time.time()
 for t in reversed(range(T)):
     print(f"Backwards Inductive Step t = {t}...")

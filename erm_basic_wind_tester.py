@@ -29,7 +29,7 @@ def wind_process(T, theta, mu, wind_sigma, n, tau):
     winds = torch.cat((winds[:, 0].view(n, 1), final_wind), dim = 1)
     return winds
 
-n = 50
+n = 16
 T = 50
 L_x = 20
 theta = 0.1
@@ -334,5 +334,5 @@ ax.set_xlabel("Log of Squared Distance")
 ax.set_title("Histogram of (Log of) Terminal Costs for Unregularised Problem")
 ax.legend()
 
-plt.savefig("erm_hists_sample.png", dpi=300, bbox_inches='tight')
+plt.savefig("erm_hists_sample_low_samples.png", dpi=300, bbox_inches='tight')
 plt.close()

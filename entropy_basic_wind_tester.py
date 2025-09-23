@@ -75,7 +75,7 @@ class NeuralNet(nn.Module):
         self.hidden_layer = nn.Linear(input_dim, width)
         self.sigmoid = nn.Tanh()
         self.output_layer = nn.Linear(width, output_dim)
-        
+        self.width = width
     def forward(self, x):
         activations = self.sigmoid(self.hidden_layer(x))
         unscaled = self.output_layer(activations)

@@ -127,7 +127,7 @@ for sim in range(num_sims):
 
     # empirical risk minimisation
     input_dim, width, output_dim = 3, 200, 1
-    start_rate, final_rate, num_epochs = 0.00001, 0.000000001, 30
+    start_rate, final_rate, num_epochs = 0.00001, 0.000000001, 1
     models_erm = [NeuralNet_erm(input_dim, width, output_dim).to(device) for _ in range(T)]
     optimisers = [optim.AdamW(model.parameters(), lr=start_rate) for model in models_erm]
     schedulers = [optim.lr_scheduler.CosineAnnealingLR(opt, T_max = num_epochs, eta_min = final_rate) for opt in optimisers]
@@ -212,7 +212,7 @@ for sim in range(num_sims):
             return unscaled/self.width
 
     input_dim, width, output_dim = 3, 100, 1
-    start_rate, final_rate, num_epochs = 1, 0.000000001, 20
+    start_rate, final_rate, num_epochs = 1, 0.000000001, 1
     beta = 100
     sigma = beta * math.sqrt(0.1)
     p = 2

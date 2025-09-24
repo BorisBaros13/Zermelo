@@ -204,16 +204,20 @@ for sim in range(num_sims):
         def __init__(self, input_dim, width, output_dim):
             super(NeuralNet_entropy, self).__init__()
             self.hidden_layer = nn.Linear(input_dim, width)
+            self.hidden_layer.bias.data.zero_()
+            self.hidden_layer.bias.requires_grad = False
             self.sigmoid = nn.Tanh()
             self.output_layer = nn.Linear(width, output_dim)
+            self.output_layer.bias.data.zero_()
+            self.output_layer.bias.requires_grad = False
             self.width = width
         def forward(self, x):
             activations = self.sigmoid(self.hidden_layer(x))
             unscaled = self.output_layer(activations)
             return unscaled/self.width
 
-    input_dim, width, output_dim = 3, 100, 1
-    start_rate, final_rate, num_epochs = 1, 0.000000001, 1
+    input_dim, width, output_dim = 4, 500, 1
+    start_rate, final_rate, num_epochs = 0.1, 0.000000001, 1
     beta = 100
     sigma = beta * math.sqrt(0.1)
     p = 2
@@ -231,7 +235,7 @@ for sim in range(num_sims):
             # generate path from T
             for futs in range(path_length):
                 angle = models_reg[t + futs](torch.cat([current_paths[-1]/torch.tensor([20, 10], device = device),
-                                                    training_winds[:, t + futs].view(n, 1)], dim = 1))
+                                                    training_winds[:, t + futs].view(n, 1), ones_vec.view(n, 1)], dim = 1))
                 heading = torch.cat([torch.cos(angle),
                                     torch.sin(angle)], dim = 1)
                 wind_vec = torch.cat([zeros_vec,
@@ -300,7 +304,7 @@ for sim in range(num_sims):
         "scheduler": "CosineAnnealingLR",
         "vs": vs,
         "training_data": training_winds,
-        "erm_model_parameters": [model.state_dict() for model in models_reg],
+        "entropy_model_parameters": [model.state_dict() for model in models_reg],
         "time_taken": end_time - start_time,
         "method": "Entropy-Regularised"
     }

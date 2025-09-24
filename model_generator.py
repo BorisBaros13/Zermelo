@@ -39,6 +39,7 @@ from matplotlib import animation
 from matplotlib.collections import LineCollection
 import matplotlib.patches as mpatches
 import time
+import os
 
 # Device setup
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -309,5 +310,10 @@ for sim in range(num_sims):
         "erm": erm_info,
         "entropy_regularised": entropy_info
     }
-
-    torch.save(full_info, f"erm_vs_entropy/{time.strftime('%Y-%m-%d', time.localtime())}, {sim+1}_of_{num_sims}.pt")
+    
+    # create folder if it doesn't exist
+    save_dir = "erm_vs_entropy"
+    os.makedirs(save_dir, exist_ok=True)
+    date_str = time.strftime('%Y-%m-%d', time.localtime())
+    fname = os.path.join(save_dir, f"{date_str}_sim{sim+1}_of_{num_sims}.pt")
+    torch.save(full_info, fname)

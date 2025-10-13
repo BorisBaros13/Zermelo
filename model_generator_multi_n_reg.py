@@ -78,7 +78,7 @@ class NeuralNet_entropy(nn.Module):
 
 # hyperparameters
 input_dim, width, output_dim = 4, 500, 1
-start_rate, final_rate, num_epochs = 1, 0.000000001, 40000
+start_rate, final_rate, num_epochs = 0.1, 0.000000001, 40000
 beta = 100
 sigma = beta * math.sqrt(0.1)
 p = 2

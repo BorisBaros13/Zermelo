@@ -207,8 +207,8 @@ for t in reversed(range(T)):
                 with torch.no_grad():
                     print(f" Epoch: {epoch}\nObstacle Cost: {running_c.mean().item():.6f}\nTerminal Cost: {terminal_c.mean().item():.6f}")
     # freeze model after training
-        for param in models_erm[t].parameters():
-            param.requires_grad = False
+    for param in models_erm[t].parameters():
+        param.requires_grad = False
 
 # write information to a dictionary
 erm_info = {

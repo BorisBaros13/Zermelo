@@ -54,9 +54,7 @@ except:
     with open("./erm_vs_entropy/2025-09-26_sim2_of_3.pt", "rb") as f:
         data = torch.load(f, map_location = device)
 
-# repeat training data for as many reference control batches we do
-ref_batches = 4
-training_winds = data["erm"]["training_data"].repeat((ref_batches, 1))
+training_winds = data["erm"]["training_data"]
 erm_width = data["erm"]["network_width"] 
 entropy_width = data["entropy_regularised"]["network_width"]
 
@@ -135,6 +133,8 @@ class NeuralNet_entropy(nn.Module):
         unscaled = self.output_layer(activations)
         return unscaled/self.width
 
+# repeat training data for as many reference control batches we do
+ref_batches = 4
 zeros_vec, ones_vec = torch.zeros(n * ref_batches, 1, device = device), torch.ones(n * ref_batches, 1, device = device) # just for later
 # construct the full reference control vector
 ref_ctrl = torch.zeros(n, 1, device = device)
@@ -164,6 +164,7 @@ ref_path = torch.cat([ref_path,
                                             T, 
                                             n)[0]],
                                             dim = 0)
+training_winds = data["erm"]["training_data"].repeat((ref_batches, 1))
 
 # erm minimisation
 input_dim, width, output_dim = 3, erm_width, 1

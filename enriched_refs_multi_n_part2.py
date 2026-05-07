@@ -14,6 +14,7 @@ from matplotlib import animation
 from matplotlib.collections import LineCollection
 import matplotlib.patches as mpatches
 import time
+from pathlib import Path
 import os
 
 # Device setup
@@ -100,13 +101,30 @@ for sim in range(num_sims):
     for n in ns:
         print(f"Simulation {sim+1}/{num_sims} for n = {n}")
         # retrieve training data and gather reference trajectories
+        # pattern = f"*_n{n}_sim{sim+1}_of_10.pt"
+        # try:
+        #     with open(f"/home/baros/GitHub Repos/Zermelo/differing_n_regs/{pattern}", "rb") as f:
+        #         data = torch.load(f, map_location = device)
+        # except:
+        #     with open(f"./differing_n_regs/{pattern}", "rb") as f:
+        #         data = torch.load(f, map_location = device)
         pattern = f"*_n{n}_sim{sim+1}_of_10.pt"
-        try:
-            with open(f"/home/baros/GitHub Repos/Zermelo/differing_n_regs/{pattern}", "rb") as f:
-                data = torch.load(f, map_location = device)
-        except:
-            with open(f"./differing_n_regs/{pattern}", "rb") as f:
-                data = torch.load(f, map_location = device)
+
+        search_dirs = [
+            Path("/home/baros/GitHub Repos/Zermelo/differing_n_regs"),
+            Path("./differing_n_regs"),
+        ]
+
+        data = None
+
+        for directory in search_dirs:
+            matches = list(directory.glob(pattern))
+
+            if matches:
+                file_path = matches[0]   # take first matching file
+                data = torch.load(file_path, map_location=device)
+                break
+
         training_winds = data["training_data"]
         ref_ctrl = torch.zeros(n, 1, device = device)
         initial_points = torch.zeros(n, 2, device = device) - torch.tensor([20, 0], device = device)

@@ -102,10 +102,10 @@ for sim in range(num_sims):
         # retrieve training data and gather reference trajectories
         pattern = f"*_n{n}_sim{sim+1}_of_10.pt"
         try:
-            with open(f"/home/baros/GitHub Repos/Zermelo/erm_vs_entropy/{pattern}", "rb") as f:
+            with open(f"/home/baros/GitHub Repos/Zermelo/differing_n_regs/{pattern}", "rb") as f:
                 data = torch.load(f, map_location = device)
         except:
-            with open(f"./erm_vs_entropy/{pattern}", "rb") as f:
+            with open(f"./differing_n_regs/{pattern}", "rb") as f:
                 data = torch.load(f, map_location = device)
         training_winds = data["training_data"]
         ref_ctrl = torch.zeros(n, 1, device = device)

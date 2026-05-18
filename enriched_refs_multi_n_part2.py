@@ -79,6 +79,19 @@ def gen_ref_path_pointing(p0, pT, winds, vs, T, n):
             pointing_ctrls[:, t+1, 0] = angle
     return pointing_path, pointing_ctrls
 
+def wind_process(T, theta, mu, wind_sigma, n, tau):
+    num_to_sim = int(T / tau)
+    winds = torch.zeros(n, num_to_sim + 1, device = device)
+    winds[:, 0] = 0.5 * torch.rand(n , device = device) - 0.25 
+    for step in range(1, num_to_sim + 1):
+        dW = torch.randn(n , device = device)
+        winds[:, step] = winds[:, step - 1] +(mu - winds[:, step - 1]) * theta * tau + wind_sigma * torch.sqrt(tau) * dW
+    # only return winds for the integer time-steps
+    final_wind = winds[:, 1:][:, ::int(1 / tau)]
+    # add initial wind to the front
+    winds = torch.cat((winds[:, 0].view(n, 1), final_wind), dim = 1)
+    return winds
+
 class NeuralNet_entropy(nn.Module):
         def __init__(self, input_dim, width, output_dim):
             super(NeuralNet_entropy, self).__init__()
@@ -109,23 +122,27 @@ for sim in range(10, 2 * num_sims):
         #     with open(f"./differing_n_regs/{pattern}", "rb") as f:
         #         data = torch.load(f, map_location = device)
         pattern = f"*_n{n}_sim{sim+1}_of_10.pt"
+        try:
+            search_dirs = [
+                Path("/home/baros/GitHub Repos/Zermelo/differing_n_regs"),
+                Path("./differing_n_regs"),
+            ]
 
-        search_dirs = [
-            Path("/home/baros/GitHub Repos/Zermelo/differing_n_regs"),
-            Path("./differing_n_regs"),
-        ]
+            data = None
 
-        data = None
+            for directory in search_dirs:
+                matches = list(directory.glob(pattern))
 
-        for directory in search_dirs:
-            matches = list(directory.glob(pattern))
+                if matches:
+                    file_path = matches[0]   # take first matching file
+                    data = torch.load(file_path, map_location=device)
+                    break
 
-            if matches:
-                file_path = matches[0]   # take first matching file
-                data = torch.load(file_path, map_location=device)
-                break
-
-        training_winds = data["training_data"]
+            training_winds = data["training_data"]
+        except:
+            # if gone beyond the possible simulations, then make new training winds
+            training_winds = wind_process(T, theta, mu, wind_sigma, n, tau)
+            
         ref_ctrl = torch.zeros(n, 1, device = device)
         initial_points = torch.zeros(n, 2, device = device) - torch.tensor([20, 0], device = device)
         ref_path = gen_ref_path(ref_ctrl, initial_points, training_winds, vs, T, n)

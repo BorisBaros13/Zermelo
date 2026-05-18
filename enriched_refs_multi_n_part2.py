@@ -97,7 +97,7 @@ class NeuralNet_entropy(nn.Module):
         
 num_sims = 10
 ref_batches = 4
-for sim in range(num_sims):
+for sim in range(10, 2 * num_sims):
     for n in ns:
         print(f"Simulation {sim+1}/{num_sims} for n = {n}")
         # retrieve training data and gather reference trajectories
